@@ -15,8 +15,6 @@ from pythonosc import dispatcher
 from pythonosc import osc_server
 from pythonosc import udp_client
 from pythonosc import osc_message_builder
-import multiprocessing
-from multiprocessing import Process
 
 # Global Variables
 time_reference = time.time()
