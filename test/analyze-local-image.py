@@ -1,4 +1,5 @@
 import requests
+import cv2
 # If you are using a Jupyter notebook, uncomment the following line.
 #%matplotlib inline
 import matplotlib.pyplot as plt
@@ -25,6 +26,10 @@ image_path = "C:/Users/barne/Downloads/family.jpg"
 
 # Read the image into a byte array
 image_data = open(image_path, "rb").read()
+im_np_array = cv2.imread("C:/Users/barne/Downloads/family.jpg")
+image_data2 = im_np_array.tobytes()
+print(type(image_data))
+print(type(image_data2))
 headers    = {'Ocp-Apim-Subscription-Key': subscription_key,
               'Content-Type': 'application/octet-stream'}
 params     = {'visualFeatures': 'Categories,Tags,Description,Faces,Color'}
