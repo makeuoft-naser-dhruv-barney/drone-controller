@@ -188,7 +188,7 @@ def videoFrameHandler(event, sender, data):
         cmd = [ 'mplayer', '-fps', '35', '-really-quiet' ]
         if wid is not None:
             cmd = cmd + [ '-wid', str(wid) ]
-        video_player = Popen(cmd + ['-'], stdin=PIPE)
+        video_player = Popen(cmd + ['-'], stdin=PIPE, shell=True)
 
     try:
         video_player.stdin.write(data)
