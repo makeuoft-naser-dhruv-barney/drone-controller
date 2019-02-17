@@ -11,14 +11,14 @@ import math
 import socket
 import pythonosc
 import time
-import errno, os, sys
 from pythonosc import dispatcher
 from pythonosc import osc_server
 from pythonosc import udp_client
 from pythonosc import osc_message_builder
-import multiprocessing
-from multiprocessing import Process
-
+import threading
+import av
+import cv2.cv2 as cv2
+import numpy
 
 def handler(event, sender, data, **args):
     drone = sender
@@ -37,8 +37,9 @@ def Drone():
 
     except Exception as ex:
         print(ex)
-    #finally:
-        #drone.quit()
+    finally:
+        cv2.destroyAllWindows()
+        drone.quit()
 
 
 # Global Variable
@@ -151,6 +152,54 @@ def eeg_handler(unused_addr, args, ch1, ch2, ch3, ch4):
         counter.calls = 0  # resetting the counter so that it counts back to 10 every time
 
 
+# ------------------------------ Video processing ----------------------------------
+def draw_text(image, text, row):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.5
+    font_size = 24
+    font_color = (255, 255, 255)
+    bg_color = (0, 0, 0)
+    d = 2
+    height, width = image.shape[:2]
+    left_margin = 10
+    if row < 0:
+        pos = (left_margin, height + font_size * row + 1)
+    else:
+        pos = (left_margin, font_size * (row + 1))
+    cv2.putText(image, text, pos, font, font_scale, bg_color, 6)
+    cv2.putText(image, text, pos, font, font_scale, font_color, 1)
+
+def video_recv_thread(drone):
+    global new_image
+
+    container = av.open(drone.get_video_stream())
+    while True:
+        for frame in container.decode(video=0):
+            if 0 < frame_skip:
+                frame_skip = frame_skip - 1
+                continue
+            start_time = time.time()
+            image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+
+            draw_text(image, 'Video feed', 0)
+
+            new_image = image
+            if frame.time_base < 1.0 / 60:
+                time_base = 1.0 / 60
+            else:
+                time_base = frame.time_base
+            frame_skip = int((time.time() - start_time) / time_base)
+
+def video_draw_thread():
+
+    while True
+        if current_image is not new_image:
+            cv2.imshow('Video feed', new_image)
+            current_image = new_image
+            cv2.waitKey(1) & 0xff
+
+# ------------------------------------- Main ----------------------------------------
+
 # Below is the function to receive the OSC live feed from the muse
 if __name__ == "__main__":
 
@@ -165,6 +214,14 @@ if __name__ == "__main__":
     drone.connect()
     drone.wait_for_connection(5.0)
     drone.takeoff()
+
+    # frame of video being currently displayed
+    global current_image
+    current_image = None
+
+    # start video threads
+    threading.Thread(target=video_recv_thread(), args=[drone]).start()
+    threading.Thread(target=video_draw_thread()).start()
 
     #p1 = Process(target=Drone)
 
