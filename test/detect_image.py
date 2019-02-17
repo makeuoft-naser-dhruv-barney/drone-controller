@@ -17,9 +17,10 @@ params = urllib.parse.urlencode({
 
 try:
     conn = http.client.HTTPSConnection('canadacentral.api.cognitive.microsoft.com')
-    # conn.request("POST", "/vision/v2.0/detect?%s" % params,
-    #              "{'url':'https://upload.wikimedia.org/wikipedia/en/e/e8/Samfacejr.jpg'}", headers)
-    conn.request("POST", "/vision/v2.0/detect?%s" % params, [get_byte_array("C:/person.jpg")],headers)
+    conn.request("POST", "/vision/v2.0/detect?%s" % params,
+                 "{'url':'https://upload.wikimedia.org/wikipedia/en/e/e8/Samfacejr.jpg'}", headers)
+    # conn.request("POST", "/vision/v2.0/detect?%s" % params, [get_byte_array("C:/person.jpg")],headers)
+    # conn.request("POST", "/vision/v2.0/detect?%s" % params, "{'url':'C:\person.jpg'}", headers)
     response = conn.getresponse()
     data = response.read()
     print(data)
