@@ -19,11 +19,22 @@ from pythonosc import osc_message_builder
 import multiprocessing
 from multiprocessing import Process
 
+# Global Variables
+time_reference = time.time()
+time_update = time_reference
+time_delay = 3
+is_jaw_clench = False
+is_look_left = False
+is_timer_start = False
+hold_jaw_clench = False
+hold_look_left = False
+
 
 def handler(event, sender, data, **args):
     drone = sender
     if event is drone.EVENT_FLIGHT_DATA:
         print(data)
+
 
 def Drone():
     print('Muse')
@@ -41,9 +52,6 @@ def Drone():
         #drone.quit()
 
 
-# Global Variable
-is_jaw_clench = False
-
 # Array to store OSC data for further processing
 TempCH1 = []
 TempCH2 = []
@@ -57,6 +65,8 @@ def counter(x):
 
 
 def LookLeft():
+    global is_look_left
+
     upward_spike_ch3 = any(a > 880 for a in TempCH3[(len(TempCH3) - 5):(len(TempCH3) - 1)])
 
     downward_spike_ch2 = any(b < 830 for b in TempCH2[(len(TempCH2) - 5):(len(TempCH2) - 1)])
@@ -75,9 +85,10 @@ def LookLeft():
           
             print("look Left")
             print("_____")
-            drone.flip_back()
+            is_look_left = True
             return True
 
+    is_look_left = False
     return False
 
 
@@ -118,25 +129,59 @@ def Clenched():
     drone.forward(0)
 
 
-
 def jawClench(unused_addr, args, ch6):
     global is_jaw_clench
     if ch6 > 0.2:
         print("clench")
         Clenched()
-       # is_jaw_clench = True
+        is_jaw_clench = True
         return True
 
     is_jaw_clench = False
     return False
 
 
-# the eeg_handler function imports the OSC values with a frequence of
+def multi_gesture_land():
+    global drone
+    global is_jaw_clench
+    global is_look_left
+    global hold_jaw_clench
+    global hold_look_left
+    if (hold_jaw_clench and is_look_left) or (hold_look_left and is_jaw_clench):
+        drone.land()
+
+
+# the eeg_handler function imports the OSC values with a frequency of
 # 256 readings per 1 second (256/1sec = every 3.90625 milliseconds)
 
 def eeg_handler(unused_addr, args, ch1, ch2, ch3, ch4):
     counter.calls += 1  # calling the counter function
 
+    # Multi-gesture control to land the drone
+    global time_reference
+    global time_update
+    global time_delay
+    global is_jaw_clench
+    global is_look_left
+    global is_timer_start
+    global hold_jaw_clench
+    global hold_look_left
+    time_reference = time.time()
+    if is_look_left and not is_timer_start:
+        is_timer_start = True
+        hold_look_left = True
+        time_update = time.time()
+    elif is_jaw_clench and not is_timer_start:
+        is_timer_start = True
+        hold_jaw_clench = True
+        time_update = time.time()
+    elif ((time_reference - time_update) > time_delay) and is_timer_start:
+        is_timer_start = False
+        hold_look_left = False
+        hold_jaw_clench = False
+    multi_gesture_land()
+
+    # Append channel values
     if counter.calls > 10:
         # print("EEG (uV) per channel: ", ch1, ch2, ch3, ch4)
         # print("counter works!!", counter.calls)
