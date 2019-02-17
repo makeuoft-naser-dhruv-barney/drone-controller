@@ -75,6 +75,7 @@ def LookLeft():
           
             print("look Left")
             print("_____")
+            drone.flip_back()
             return True
 
     return False
@@ -112,9 +113,10 @@ def blink(unused_addr, args, ch5):
 
 def Clenched():
     global drone
-    drone.forward(40)
-    time.sleep(4)
-    drone.land()
+    drone.forward(60)
+    time.sleep(0.7)
+    drone.forward(0)
+
 
 
 def jawClench(unused_addr, args, ch6):
